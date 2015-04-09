@@ -63,11 +63,6 @@ class html5gallery {
 		$this->height = 720;
 	}
 
-	static function headJS() { ?>
-    <script type="text/javascript" src="<?php echo WEBPATH; ?>/plugins/html5gallery/jquery.js"></script>
-    <?php
-	}
-
 	static function footJS() { ?>
     <script type="text/javascript" src="<?php echo WEBPATH; ?>/plugins/html5gallery/html5gallery.js"></script>
     <?php
@@ -112,7 +107,7 @@ class html5gallery {
     if ($this->getCounterpartFile($moviepath, "mp4", "SD")) {
 		$playerconfig = '
 			<div id="vidstage" style="margin: 0px auto; max-width: ' . $vidWidth . '; max-height: ' . $vidHeight . ';">
-        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-hddefault="true" data-responsive="true" data-padding=0 style="display:none;">
+        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-hddefault="true" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
           <a href="' . $this->getCounterpartFile($moviepath, "mp4", "SD") . '"
             data-hd="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
             data-webm="' . $this->getCounterpartFile($moviepath, "webm", "SD") . '"
@@ -125,7 +120,7 @@ class html5gallery {
     } else {
 		$playerconfig = '
 			<div id="vidstage" style="margin: 0px auto; max-width: ' . $vidWidth . '; max-height: ' . $vidHeight . ';">
-        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-padding=0 style="display:none;">
+        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
           <a href="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
             data-poster="' . $videoThumb . '">
             <img src="' . $videoThumb . '" alt="' . $videoTitle . '">
@@ -236,6 +231,5 @@ class html5gallery {
 }
 
 $_zp_multimedia_extension = new html5gallery(); // claim to be the flash player.
-zp_register_filter('theme_head', 'html5gallery::headJS');
 zp_register_filter('theme_body_close', 'html5gallery::footJS');
 ?>
