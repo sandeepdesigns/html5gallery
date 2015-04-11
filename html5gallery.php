@@ -1,7 +1,7 @@
 <?php
 /**
  * Support for the "html5gallery" video player (https://html5box.com/html5gallery/index.php). It will play video natively
- *  via HTML5 in capable browsers if the appropiate multimedia formats are provided. It will fall back to flash in older browsers.
+ *	via HTML5 in capable browsers if the appropiate multimedia formats are provided. It will fall back to flash in older browsers.
  * The player size is responsive to the browser size.
 
  * Audio: This plugin does not play audio files.<br>
@@ -35,22 +35,17 @@ $plugin_is_filter = 5 | CLASS_PLUGIN;
 $plugin_description = gettext("Enable <strong>html5gallery</strong> to handle multimedia files.");
 $plugin_notice = gettext("<strong>IMPORTANT</strong>: Only one multimedia extension plugin can be enabled at the time and the class-video plugin must be enabled, too.") . '<br /><br />' . gettext("Please see <a href='https://html5box.com/html5gallery/index.php'>html5box.com</a> for more info about the player and its license.");
 $plugin_author = "Jim Brown";
-$plugin_disable = (getOption('album_folder_class') === 'external') ? gettext('This player does not support <em>External Albums</em>.') : extensionEnabled('class-video') ? false : gettext('The class-video plugin must be enabled for video support.');
+$plugin_disable = zpFunctions::pluginDisable(array(array(!extensionEnabled('class-video'), gettext('This plugin requires the <em>class-video</em> plugin')), array(!extensionEnabled('html5gallery') && class_exists('Video') && Video::multimediaExtension() != 'pseudoPlayer', sprintf(gettext('html5gallery not enabled, %s is already instantiated.'), class_exists('Video') ? Video::multimediaExtension() : false)), array(getOption('album_folder_class') === 'external', (gettext('This player does not support <em>External Albums</em>.')))));
 
-if (!empty($_zp_multimedia_extension->name) || $plugin_disable) {
+if ($plugin_disable) {
 	enableExtension('html5gallery', 0);
-
-//NOTE: the following text really should be included in the $plugin_disable statement above so that it is visible
-//on the plugin tab
-
-	if (isset($_zp_multimedia_extension)) {
-		trigger_error(sprintf(gettext('html5gallery not enabled, %s is already instantiated.'), get_class($_zp_multimedia_extension)), E_USER_NOTICE);
-	}
 } else {
-	if (OFFSET_PATH != 2)
-		require_once(SERVERPATH . '/' . ZENFOLDER . '/' . PLUGIN_FOLDER . '/class-video.php');
+	Gallery::addImageHandler('flv', 'Video');
+	Gallery::addImageHandler('fla', 'Video');
+	Gallery::addImageHandler('mp3', 'Video');
 	Gallery::addImageHandler('mp4', 'Video');
 	Gallery::addImageHandler('m4v', 'Video');
+	Gallery::addImageHandler('m4a', 'Video');
 }
 
 class html5gallery {
@@ -64,8 +59,8 @@ class html5gallery {
 	}
 
 	static function footJS() { ?>
-    <script type="text/javascript" src="<?php echo WEBPATH; ?>/plugins/html5gallery/html5gallery.js"></script>
-    <?php
+	<script type="text/javascript" src="<?php echo WEBPATH; ?>/plugins/html5gallery/html5gallery.js"></script>
+	<?php
 	}
 
 	/**
@@ -97,77 +92,31 @@ class html5gallery {
 		} 
 		$videoTitle = $videoTitle . getImageTitle();
 
-		$videoUID = getImageData('id');
-
 		$metadata = getImageMetaData(NULL,false);
 
 		$vidWidth = $metadata['VideoResolution_x'];
 		$vidHeight = $metadata['VideoResolution_y'];
 
-    if ($this->getCounterpartFile($moviepath, "mp4", "SD")) {
-		$playerconfig = '
-			<div id="vidstage" style="margin: 0px auto; max-width: ' . $vidWidth . '; max-height: ' . $vidHeight . ';">
-        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-hddefault="true" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
-          <a href="' . $this->getCounterpartFile($moviepath, "mp4", "SD") . '"
-            data-hd="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
-            data-webm="' . $this->getCounterpartFile($moviepath, "webm", "SD") . '"
-            data-hdwebm="' . $this->getCounterpartFile($moviepath, "webm", "HD") . '"
-            data-poster="' . $videoThumb . '">
-            <img src="' . $videoThumb . '" alt="' . $videoTitle . '">
-          </a>
-        </div>
-      </div>';
-    } else {
-		$playerconfig = '
-			<div id="vidstage" style="margin: 0px auto; max-width: ' . $vidWidth . '; max-height: ' . $vidHeight . ';">
-        <div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
-          <a href="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
-            data-poster="' . $videoThumb . '">
-            <img src="' . $videoThumb . '" alt="' . $videoTitle . '">
-          </a>
-        </div>
-      </div>';
-    }
-      
-      $playerconfig .= '
-			<script type="text/javascript">
-			// <!-- <![CDATA[
-				var viewportwidth;
-				var viewportheight;
-				var maxvidheight = ' . $vidHeight . '
-				var maxvidwidth = ' . $vidWidth . '
-				var vidwidth
-				var vidheight
-				var vidratio = maxvidheight / maxvidwidth
-				function setStage(){
-					if (typeof window.innerWidth != "undefined") {
-						viewportwidth = window.innerWidth,
-						viewportheight = window.innerHeight
-					} else if (typeof document.documentElement != "undefined" && typeof document.documentElement.clientWidth != "undefined" && document.documentElement.clientWidth != 0) {
-						viewportwidth = document.documentElement.clientWidth,
-						viewportheight = document.documentElement.clientHeight
-					} else {
-						viewportwidth = document.getElementsByTagName("body")[0].clientWidth,
-						viewportheight = document.getElementsByTagName("body")[0].clientHeight
-					}
-					vidheight = viewportheight - 50
-					if (vidheight > maxvidheight) {
-						vidheight = maxvidheight
-					};
-					vidwidth = vidheight / vidratio,
-					$("#vidstage").css({"max-width" : vidwidth + "px"})
-					$("#vidstage").css({"max-height"  : vidheight + "px"})
-				};
-				$(document).ready(function() {
-					setStage()
-				});
-				var resizeTimer;
-				$(window).resize(function() {
-					clearTimeout(resizeTimer);
-					resizeTimer = setTimeout(setStage, 100);
-				});
-			// ]]> -->
-			</script>';
+		if ($this->getCounterpartFile($moviepath, "mp4", "SD")) {
+			$playerconfig = '
+			<div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-hddefault="true" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
+				<a href="' . $this->getCounterpartFile($moviepath, "mp4", "SD") . '"
+					data-hd="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
+					data-webm="' . $this->getCounterpartFile($moviepath, "webm", "SD") . '"
+					data-hdwebm="' . $this->getCounterpartFile($moviepath, "webm", "HD") . '"
+					data-poster="' . $videoThumb . '">
+					<img src="' . $videoThumb . '" alt="' . $videoTitle . '">
+				</a>
+			</div>';
+		} else {
+			$playerconfig = '
+			<div class="html5gallery" data-width="' . $vidWidth . '" data-height="' . $vidHeight . '" data-responsive="true" data-padding=1 data-showtitle="false" style="display:none;">
+				<a href="' . $this->getCounterpartFile($moviepath, "mp4", "HD") . '"
+				data-poster="' . $videoThumb . '">
+				<img src="' . $videoThumb . '" alt="' . $videoTitle . '">
+				</a>
+			</div>';
+		}
 		return $playerconfig;
 	}
 
